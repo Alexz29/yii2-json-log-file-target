@@ -25,7 +25,7 @@ use yii\web\User;
  */
 class JsonFileTarget extends FileTarget
 {
-
+    public $maskVars=[];
     /**
      * Should include context in log.
      * @var bool

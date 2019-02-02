@@ -1,6 +1,7 @@
 <?php
 /**
  * @author Petra Barus <petra@urbanindo.com>
+ * @author Diveev Alexey <alexz29@yandex.ru>
  */
 
 namespace UrbanIndo\Yii2\JsonFileTarget;
@@ -24,7 +25,7 @@ use yii\web\User;
  */
 class JsonFileTarget extends FileTarget
 {
-
+    public $maskVars=[];
     /**
      * Should include context in log.
      * @var bool
@@ -66,7 +67,8 @@ class JsonFileTarget extends FileTarget
                 'context' => ArrayHelper::getValue($log, 'context')
             ]);
         }
-        return Json::encode($formatted);
+
+        return Json::encode($this->mask($formatted));
     }
 
     /**
@@ -80,7 +82,7 @@ class JsonFileTarget extends FileTarget
         }
 
         if ($message instanceof \Exception) {
-            $message = (string) $message->getMessage();
+            $message = (string)$message->getMessage();
         }
 
         if (!is_string($message)) {
@@ -98,11 +100,19 @@ class JsonFileTarget extends FileTarget
         }
     }
 
+    /**
+     * @param $timestamp
+     * @return string
+     */
     protected static function formatTime($timestamp): string
     {
         return date('Y-m-d H:i:s', $timestamp);
     }
 
+    /**
+     * @param $log
+     * @return array
+     */
     protected static function formatTracesIfExists($log): array
     {
         $traces = ArrayHelper::getValue($log, 4, []);
@@ -118,6 +128,10 @@ class JsonFileTarget extends FileTarget
         return $formattedTraces;
     }
 
+    /**
+     * @param $message
+     * @return array
+     */
     protected function getAppInfo($message): array
     {
         if ($this->prefix !== null) {
@@ -140,6 +154,10 @@ class JsonFileTarget extends FileTarget
         ];
     }
 
+    /**
+     * @param Application $app
+     * @return string
+     */
     private static function getUserIP(Application $app): string
     {
         $request = $app->getRequest();
@@ -149,6 +167,10 @@ class JsonFileTarget extends FileTarget
         return '-';
     }
 
+    /**
+     * @param Application $app
+     * @return string
+     */
     private static function getSessionId(Application $app): string
     {
         try {
@@ -167,6 +189,10 @@ class JsonFileTarget extends FileTarget
         return $session->getId();
     }
 
+    /**
+     * @param Application $app
+     * @return string
+     */
     private static function getUserId(Application $app): string
     {
         try {
@@ -190,21 +216,46 @@ class JsonFileTarget extends FileTarget
         return $identity->getId();
     }
 
-    protected function getContextMessage()
+    /**
+     * @return array
+     */
+    protected function getContextMessage(): array
     {
-        $context = [];
-        foreach ($this->logVars as $name) {
-            if (!empty($GLOBALS[$name])) {
-                $context[$name] = $GLOBALS[$name];
-            }
-        }
-        return $context;
+        return ArrayHelper::filter($GLOBALS, $this->logVars);
     }
 
+    /**
+     * Function put mask on item in array
+     *
+     * @param $message
+     * @return mixed
+     */
+    protected function mask($message)
+    {
+        foreach ($this->maskVars as $var) {
+            if (ArrayHelper::getValue($message, $var) !== null) {
+                ArrayHelper::setValue($message, $var, '***');
+            }
+        }
+
+        return $message;
+    }
+
+    /**
+     * @param array $messages
+     * @param bool $final
+     * @throws InvalidConfigException
+     * @throws \yii\log\LogRuntimeException
+     */
     public function collect($messages, $final)
     {
-        $this->messages = array_merge($this->messages, $this->filterMessages($messages, $this->getLevels(), $this->categories, $this->except));
+        $this->messages = array_merge(
+            $this->messages,
+            $this->filterMessages($messages, $this->getLevels(), $this->categories, $this->except)
+        );
+
         $count = count($this->messages);
+
         if ($count > 0 && ($final || $this->exportInterval > 0 && $count >= $this->exportInterval)) {
             if ($this->includeContext) {
                 if (!empty(($context = $this->getContextMessage()))) {
@@ -213,6 +264,7 @@ class JsonFileTarget extends FileTarget
                     }
                 }
             }
+
 
             // set exportInterval to 0 to avoid triggering export again while exporting
             $oldExportInterval = $this->exportInterval;

@@ -5,15 +5,14 @@
  */
 
 use UrbanIndo\Yii2\JsonFileTarget\JsonFileTarget;
-use yii\helpers\FileHelper;
 use yii\log\Logger;
 use yii\helpers\Json;
-use yii\log\Dispatcher;
 
 class JsonFileTargetTest extends PHPUnit_Framework_TestCase
 {
 
-    public function testFormatMessage() {
+    public function testFormatMessage()
+    {
         $fileTarget = new JsonFileTarget();
         $text = 'message';
         $level = Logger::LEVEL_INFO;
@@ -23,12 +22,12 @@ class JsonFileTargetTest extends PHPUnit_Framework_TestCase
         $formatted = $fileTarget->formatMessage($message);
         $expected = <<<JSON
 {"timestamp":"2017-10-16 13:26:30","level":"info","category":"application","traces":[],"message":"message","ip":"-","userId":"-","sessionId":"-","context":null}
-JSON
-        ;
+JSON;
         $this->assertEquals($expected, $formatted);
     }
 
-    public function testFormatMessageWithException() {
+    public function testFormatMessageWithException()
+    {
         $fileTarget = new JsonFileTarget();
         $text = new Exception("TEST");
         $level = Logger::LEVEL_INFO;
@@ -43,14 +42,13 @@ JSON
         $this->assertEquals($json['context'], ['1' => '1']);
     }
 
-    public function testLog() {
+    public function testLog()
+    {
         $dir = dirname(Yii::$app->basePath);
         $logFile = $dir . '/log/test.log';
-        FileHelper::removeDirectory(dirname($logFile));
-        mkdir(dirname($logFile), 0777, true);
         $logger = new Logger();
 
-        new Dispatcher([
+        new \yii\log\Dispatcher([
             'logger' => $logger,
             'targets' => [
                 'file' => [

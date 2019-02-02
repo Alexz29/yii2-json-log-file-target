@@ -17,8 +17,17 @@ Store log file as Json
                 'class' => JsonFileTarget::class,
                 'levels' => ['error', 'warning'],
                 'decodeMessage' => false,
+                'maskVars' =>[
+                    'context._COOKIE.PHPSESSID',
+                    'context._SERVER.HTTP_COOKIE',
+                    'sessionId'
+                ]
             ]
         ]
     ]
 ]
 ```
+
+Yii version 2.0.16
+Support [$maskVars](https://www.yiiframework.com/doc/api/2.0/yii-log-target#$maskVars-detail)
+
